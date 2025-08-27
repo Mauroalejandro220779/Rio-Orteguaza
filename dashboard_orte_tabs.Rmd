@@ -1,0 +1,90 @@
+---
+title: "Valoración Económica · Cuenca del río Orteguaza"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: scroll
+    theme: cosmo
+    source_code: embed
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(plotly)
+library(DT)
+```
+
+---
+
+Page: Transformaciones
+
+# Cambios de cobertura (2010–2020)
+
+```{r}
+tabla_transiciones <- data.frame(
+  cobertura_origen = c("Bosque", "Agua", "Vegetación natural", "Bosque", "Bosque"),
+  cobertura_destino = c("Agricultura", "Agricultura", "Agricultura", "Área sin vegetación", "Minería"),
+  area_transformada = c(18879.2, 91.2, 33.2, 3.2, 0.9)
+) %>%
+  mutate(Transición = paste(cobertura_origen, "→", cobertura_destino))
+
+ggplotly(
+  ggplot(tabla_transiciones, aes(x = reorder(Transición, area_transformada), 
+                                  y = area_transformada)) +
+    geom_col(fill = "seagreen4") +
+    coord_flip() +
+    labs(title = "Transformaciones clave", 
+         y = "Área transformada (ha)", x = NULL) +
+    theme_minimal()
+)
+```
+
+---
+
+Page: Valor Económico
+
+# Valor económico anual por servicio
+
+```{r}
+datos_valor <- data.frame(
+  Servicio = c("Captura de carbono", "Retención de sedimentos"),
+  Estimado = c(346197558, 830867),
+  Mínimo = c(259648168, 623150),
+  Máximo = c(432746947, 1038583)
+)
+
+plot_ly(datos_valor, x = ~Servicio, y = ~Estimado, type = "bar",
+        name = "Estimado", marker = list(color = "steelblue")) %>%
+  add_trace(y = ~Mínimo, name = "Mínimo", marker = list(color = "lightblue")) %>%
+  add_trace(y = ~Máximo, name = "Máximo", marker = list(color = "gray")) %>%
+  layout(title = "Valor económico anual (USD)",
+         yaxis = list(title = "USD"),
+         barmode = "group")
+```
+
+---
+
+Page: Tabla de Transiciones
+
+# Tabla interactiva
+
+```{r}
+datatable(tabla_transiciones, options = list(pageLength = 5), rownames = FALSE)
+```
+
+---
+
+Page: Resumen Económico
+
+# Valor total combinado
+
+```{r}
+resumen_total <- data.frame(
+  Servicio = c("Captura de carbono", "Retención de sedimentos", "Total combinado"),
+  Estimado = c(346197558, 830867, 347028424),
+  Mínimo = c(259648168, 623150, 260271318),
+  Máximo = c(432746947, 1038583, 433785531)
+)
+
+datatable(resumen_total, options = list(pageLength = 5), rownames = FALSE)
+```
