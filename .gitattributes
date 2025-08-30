@@ -1,0 +1,7 @@
+# Forzar detección de lenguaje R
+*.R linguist-language=R
+*.Rmd linguist-language=R
+*.rmd linguist-language=R
+
+# Opcional: ignorar HTML en estadísticas
+*.html linguist-detectable=false
