@@ -69,8 +69,8 @@ git clone https://github.com/Mauroalejandro220779/Rio-Orteguaza.git
 
 **Ejecutar en R**
 
-source("1_procesamiento.R")
-rmarkdown::render("2_dashboard_orte_tabs.Rmd")
+source("Preparacion Datos Orteguaza.R")
+rmarkdown::render("dashboard_orte_tabs.Rmd")
 
 🔍 Datos Fuente
 
@@ -96,4 +96,19 @@ Las contribuciones son bienvenidas. Para cambios importantes:
 4. Push a la rama (git push origin feature/NuevaFeature)
 5. Abre un Pull Request
 
+📝 Licencia
+Este proyecto está bajo la Licencia MIT. Ver el archivo LICENSE para más detalles.
+
+👥 Autor
+Mauro Alejandro - GitHub
+
+Contacto: mauro.reyes@socrates.org
+
+🔄 Actualización
+Para actualizar el dashboard:
+
+Modificar los scripts de procesamiento o dashboard
+Ejecutar Preparacion Datos Orteguaza.R y luego dashboard_orte_tabs.Rmd
+Subir los cambios al repositorio
+GitHub Pages se actualiza automáticamente
 
