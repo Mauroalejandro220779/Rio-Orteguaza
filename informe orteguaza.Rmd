@@ -1,0 +1,211 @@
+---
+title: "Valor económico de la transformación ecosistémica"
+author: "Mauro Alejandro Reyes Bonilla"
+subtitle: Cuenca del río Orteguaza · 2010 – 2020
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: flatly
+  pdf_document:
+    toc: true
+params:
+  cobertura_csv: cambios_orteguaza.csv
+  precio_carbono: 50
+  factor_conversion: 3.6667
+  ton_carbono_por_ha: 100
+  unc_frac: 0.25
+  tasa_sed_ha: 22
+  valor_sed_ton: 2
+  imgs_invest: Imagen1.png
+  imgs_mapbiomas:
+  - mapbiomas_cobertura_2000.png
+  - mapbiomas_cobertura_2022.png
+---
+knitr::opts_chunk$set(echo = TRUE, warning = TRUE, message = TRUE)
+library(tidyverse)
+library(knitr)
+library(ggplot2)
+library(kableExtra)
+```
+## 1 · Contexto Visual
+```{r contexto-visual, fig.align='center', out.width="100%"}
+knitr::include_graphics(params$imgs_invest)
+```
+
+## 2 · Transiciones de cobertura (ha)
+
+```{r grafico-transiciones, fig.width=10, fig.height=6}
+library(ggplot2)
+library(dplyr)
+library(knitr)
+library(kableExtra)
+
+# Cargar los datos
+cambios <- read.csv(params$cobertura_csv)
+
+# Filtrar y ordenar
+cambios_filtrados <- cambios %>%
+  filter(area_ha > 0) %>%
+  arrange(desc(area_ha)) %>%
+  mutate(transicion = paste(cobertura_origen, "->", cobertura_destino))  # usamos "->" por seguridad
+
+# Preparar tabla
+tabla_transiciones <- cambios_filtrados %>%
+  mutate(`Área transformada (ha)` = round(area_ha, 1)) %>%
+  select(`Cobertura origen` = cobertura_origen,
+         `Cobertura destino` = cobertura_destino,
+         `Área transformada (ha)`,
+         `Transición` = transicion)
+
+# Mostrar tabla con formato bonito
+kable(tabla_transiciones,
+      format = "html",
+      caption = "Principales transiciones de cobertura en la cuenca del Orteguaza (2000–2022)",
+      align = "l") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+
+# Gráfico
+ggplot(cambios_filtrados, 
+       aes(x = reorder(transicion, area_ha), y = area_ha / 1000)) +
+  geom_col(fill = "seagreen4") +
+  coord_flip() +
+  labs(y = "Área transformada (miles ha)", x = NULL,
+       title = "Transformaciones clave 2010–2020") +
+  theme_minimal(base_size = 13)
+```
+
+## 3. Valor económico - Almacenamiento de carbono
+
+```{r valor-carbono, echo=FALSE, message=FALSE, warning=FALSE}
+library(dplyr)
+library(kableExtra)
+library(scales)
+
+# Cálculos económicos del carbono perdido
+valor_carbono <- cambios %>% 
+  filter(cobertura_origen == "Bosque") %>% 
+  mutate(
+    ton_C   = area_ha * params$ton_carbono_por_ha,
+    ton_CO2 = ton_C * params$factor_conversion,
+    usd     = ton_CO2 * params$precio_carbono,
+    usd_low = usd * (1 - params$unc_frac),
+    usd_hi  = usd * (1 + params$unc_frac)
+  )
+
+# Totalización ANTES de formateo
+total_carbon   <- sum(valor_carbono$usd, na.rm = TRUE)
+total_carbon_l <- total_carbon * (1 - params$unc_frac)
+total_carbon_h <- total_carbon * (1 + params$unc_frac)
+
+# Tabla de resultados con fila total
+tabla_valor_carbono <- valor_carbono %>%
+  select(`Destino de cambio` = cobertura_destino,
+         `Área transformada (ha)` = area_ha,
+         `Valor estimado (USD)` = usd,
+         `Valor mínimo (USD)` = usd_low,
+         `Valor máximo (USD)` = usd_hi) %>%
+  group_by(`Destino de cambio`) %>%
+  summarise(across(where(is.numeric), sum, na.rm = TRUE), .groups = "drop") %>%
+  bind_rows(
+    tibble(
+      `Destino de cambio` = "**Total**",
+      `Área transformada (ha)` = sum(valor_carbono$area_ha, na.rm = TRUE),
+      `Valor estimado (USD)`  = total_carbon,
+      `Valor mínimo (USD)`    = total_carbon_l,
+      `Valor máximo (USD)`    = total_carbon_h
+    )
+  ) %>%
+  mutate(across(where(is.numeric), ~ comma(.x, accuracy = 1)))
+
+# Mostrar tabla
+kable(tabla_valor_carbono,
+      format = "html",
+      escape = FALSE,
+      caption = "Pérdida anual de captura de carbono (USD) ±25 %",
+      align = "l") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+
+# Gráfico
+ggplot(valor_carbono, aes(reorder(cobertura_destino, usd), usd / 1e6)) +
+  geom_col(fill = "#2c7fb8") +
+  coord_flip() +
+  labs(y = "USD millones/año", x = NULL, title = "Valor anual perdido · Carbono") +
+  theme_minimal()
+
+
+```
+
+## 4. Valor económico - Retención de Sedimentos
+
+```{r}
+bosque_perdido <- sum(cambios$area_ha[cambios$cobertura_origen == "Bosque"], na.rm = TRUE)
+
+ton_sed_loss <- bosque_perdido * params$tasa_sed_ha
+usd_sed      <- ton_sed_loss * params$valor_sed_ton
+usd_sed_low  <- usd_sed * (1 - params$unc_frac)
+usd_sed_hi   <- usd_sed * (1 + params$unc_frac)
+
+library(glue)
+
+glue("
+**Resultado estimado de pérdida por erosión:**
+
+- Área de bosque transformado: **{comma(bosque_perdido, accuracy=1)} ha**  
+- Toneladas de sedimento perdidas: **{comma(ton_sed_loss, accuracy=1)} t/año**  
+- Valor económico estimado: **USD {comma(usd_sed, accuracy=1)}**  
+- Intervalo ±25 %: **USD {comma(usd_sed_low)} – {comma(usd_sed_hi)}**
+")
+
+```
+
+## 5. Resumen económico total
+
+```{r resumen-economico, echo=FALSE}
+# Sumarizar valores de carbono (ya calculados previamente)
+total_carbon <- sum(valor_carbono$usd, na.rm = TRUE)
+total_carbon_l <- total_carbon * (1 - params$unc_frac)
+total_carbon_h <- total_carbon * (1 + params$unc_frac)
+
+# Sumarizar valores de sedimentos (ya calculados previamente)
+total_sed <- usd_sed
+total_sed_l <- usd_sed_low
+total_sed_h <- usd_sed_hi
+
+# Calcular total combinado
+total_combinado <- total_carbon + total_sed
+total_combinado_l <- total_carbon_l + total_sed_l
+total_combinado_h <- total_carbon_h + total_sed_h
+
+# Crear tabla resumen
+resumen_economico <- tibble(
+  Servicio = c("Almacenamiento de carbono", "Retención de sedimentos", "Total combinado"),
+  `Valor estimado (USD)` = c(total_carbon, total_sed, total_combinado),
+  `Valor mínimo (USD)` = c(total_carbon_l, total_sed_l, total_combinado_l),
+  `Valor máximo (USD)` = c(total_carbon_h, total_sed_h, total_combinado_h)
+) %>%
+  mutate(across(where(is.numeric), ~comma(.x, accuracy = 1)))
+
+# Mostrar tabla
+kable(resumen_economico,
+      format = "html",
+      caption = "Resumen del valor económico anual perdido (USD) ±25 %",
+      align = "l") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover", "condensed"))
+
+# Opcional: Mostrar también como texto
+glue("
+**Resumen económico anual de pérdidas:**
+
+1. **Almacenamiento de carbono**:  
+   - Estimado: USD {comma(total_carbon)}  
+   - Rango: USD {comma(total_carbon_l)} – {comma(total_carbon_h)}
+
+2. **Retención de sedimentos**:  
+   - Estimado: USD {comma(total_sed)}  
+   - Rango: USD {comma(total_sed_l)} – {comma(total_sed_h)}
+
+**Total combinado**:  
+- Estimado: USD {comma(total_combinado)}  
+- Rango: USD {comma(total_combinado_l)} – {comma(total_combinado_h)}
+")
