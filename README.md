@@ -100,7 +100,7 @@ Las contribuciones son bienvenidas. Para cambios importantes:
 Este proyecto está bajo la Licencia MIT. Ver el archivo LICENSE para más detalles.
 
 👥 Autor
-Mauro Alejandro - GitHub
+Mauro A. Reyes Bonilla - https://github.com/Mauroalejandro220779
 
 Contacto: mauro.reyes@socrates.org
 
