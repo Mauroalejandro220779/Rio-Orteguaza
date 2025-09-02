@@ -1,5 +1,8 @@
-📊 **Dashboard de Valoración Económica de Cambios de Cobertura - Río Orteguaza**                                                      
-<img width="108" height="50" alt="image" src="https://github.com/user-attachments/assets/06393ce0-b276-4e85-8aca-bdb73f99d4ec" />
+# 📊 Dashboard de Valoración Económica de Cambios de Cobertura - Río Orteguaza
+
+[![Ver Dashboard Interactivo](https://github.com/user-attachments/assets/06393ce0-b276-4e85-8aca-bdb73f99d4ec)](https://mauroalejandro220779.github.io/Rio-Orteguaza/dashboard_orte_tabs.html)
+
+*Dashboard desarrollado en el marco de [Socrates Data](https://socratesdata.org/)*
                                                        
 
 
